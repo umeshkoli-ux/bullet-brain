@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ask Brain Bot — Bullet Brain</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-wrapper">
+
+<!-- Top Navigation -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="brand-icon">🧠</div>
+    Bullet Brain
+  </div>
+  <div class="navbar-right">
+    <a href="{{ url_for('home') }}" class="back-btn">← Back</a>
+    <div class="profile-btn" title="{{ username }}">
+      {{ username[0].upper() }}
+      <div class="profile-dropdown">
+        <div style="padding: 10px 12px; font-size:0.85rem; color: var(--text-secondary);">
+          Signed in as<br><strong style="color:var(--text-primary);">{{ username }}</strong>
+        </div>
+        <div class="divider"></div>
+        <a href="{{ url_for('logout') }}"><span>⎋</span> Sign Out</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Chatbot Interface -->
+<div class="chatbot-layout">
+
+  <div class="chatbot-card">
+
+    <!-- Chat Header -->
+    <div class="chatbot-header">
+      <div class="chatbot-avatar">🤖</div>
+      <div class="chatbot-header-info">
+        <h3>Brain Bot</h3>
+        <div class="chatbot-status">
+          <span class="chatbot-status-dot"></span>
+          Online — ready to help
+        </div>
+      </div>
+    </div>
+
+    <!-- Message List -->
+    <div class="chatbot-messages" id="chatMessages">
+      <!-- Messages are injected by JavaScript -->
+    </div>
+
+    <!-- Input Area -->
+    <div class="chatbot-input-area">
+      <input
+        type="text"
+        id="chatInput"
+        class="chatbot-input"
+        placeholder="Tell me how you're feeling..."
+        autocomplete="off"
+      >
+      <button class="chatbot-send-btn" id="sendBtn" title="Send">
+        &#9658;
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Chatbot State ──────────────────────────────────────────────────────────────
+  let conversationStep = 0;
+  const messagesEl     = document.getElementById('chatMessages');
+  const inputEl        = document.getElementById('chatInput');
+  const sendBtn        = document.getElementById('sendBtn');
+
+  // ── Helpers ────────────────────────────────────────────────────────────────────
+  function now() {
+    const d = new Date();
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function appendMessage(text, sender, extraHTML = '') {
+    const msg = document.createElement('div');
+    msg.className = `message ${sender}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'message-avatar';
+    avatar.textContent = sender === 'bot'
+      ? '🤖'
+      : '{{ username[0].upper() }}';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'message-bubble';
+    bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+    if (extraHTML) {
+      const extra = document.createElement('div');
+      extra.innerHTML = extraHTML;
+      bubble.appendChild(extra);
+    }
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'message-time';
+    timeEl.textContent = now();
+
+    const inner = document.createElement('div');
+    inner.style.display = 'flex';
+    inner.style.flexDirection = 'column';
+    inner.appendChild(bubble);
+    inner.appendChild(timeEl);
+
+    if (sender === 'bot') {
+      msg.appendChild(avatar);
+      msg.appendChild(inner);
+    } else {
+      msg.appendChild(inner);
+      msg.appendChild(avatar);
+    }
+
+    messagesEl.appendChild(msg);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function showTyping() {
+    const div = document.createElement('div');
+    div.className = 'message bot';
+    div.id = 'typingIndicator';
+    div.innerHTML = `
+      <div class="message-avatar">🤖</div>
+      <div class="message-bubble" style="padding:10px 16px;">
+        <div class="typing-indicator">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+  }
+
+  // ── Send Message ───────────────────────────────────────────────────────────────
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    appendMessage(text, 'user');
+    inputEl.value = '';
+    inputEl.disabled = true;
+    sendBtn.disabled = true;
+
+    showTyping();
+
+    try {
+      const res  = await fetch('{{ url_for("api_chat") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, step: conversationStep })
+      });
+      const data = await res.json();
+
+      hideTyping();
+
+      // Build optional redirect button
+      let extraHTML = '';
+      if (data.redirect) {
+        extraHTML = `
+          <br>
+          <button
+            class="mood-redirect-btn"
+            onclick="window.location.href='${data.redirect}'"
+          >
+            Go to ${data.mood ? data.mood.charAt(0).toUpperCase() + data.mood.slice(1) : ''} Sessions →
+          </button>`;
+      }
+
+      appendMessage(data.reply, 'bot', extraHTML);
+      conversationStep = data.step;
+
+    } catch (err) {
+      hideTyping();
+      appendMessage('Sorry, something went wrong. Please try again.', 'bot');
+      console.error(err);
+    }
+
+    inputEl.disabled = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+
+  // ── Event Listeners ────────────────────────────────────────────────────────────
+  sendBtn.addEventListener('click', sendMessage);
+
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // ── Init: trigger greeting from bot ───────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    showTyping();
+    try {
+      const res  = await fetch('{{ url_for("api_chat") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '', step: 0 })
+      });
+      const data = await res.json();
+      hideTyping();
+      appendMessage(data.reply, 'bot');
+      conversationStep = data.step;
+    } catch (e) {
+      hideTyping();
+      appendMessage("Hi! I'm Brain Bot 🧠 How are you feeling today?", 'bot');
+      conversationStep = 1;
+    }
+    inputEl.focus();
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "startupCommands": [
+    "pip install -r requirements.txt; python app.py"
+  ],
+  "projectId": "5ec8b428-0cad-46a1-8341-bc39e96e75e7",
+  "templateId": "any"
+}

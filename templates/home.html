@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — Bullet Brain</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="page-wrapper">
+
+<!-- Top Navigation -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="brand-icon">🧠</div>
+    Bullet Brain
+  </div>
+  <div class="navbar-right">
+    <!-- Profile icon with dropdown -->
+    <div class="profile-btn" title="{{ username }}">
+      {{ username[0].upper() }}
+      <div class="profile-dropdown">
+        <div style="padding: 10px 12px; font-size:0.85rem; color: var(--text-secondary);">
+          Signed in as<br>
+          <strong style="color:var(--text-primary);">{{ username }}</strong>
+        </div>
+        <div class="divider"></div>
+        <a href="{{ url_for('logout') }}">
+          <span>⎋</span> Sign Out
+        </a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<main class="home-hero">
+  <h1>
+    Hello, <span>{{ username }}</span> 👋<br>
+    How's your brain today?
+  </h1>
+  <p>Choose a path to begin your wellness session. Let your mind guide you.</p>
+
+  <div class="home-actions">
+    <!-- Enter — manual mood selection -->
+    <a href="{{ url_for('enter') }}" class="action-card">
+      <div class="action-card-icon purple">🎧</div>
+      <h2>Enter</h2>
+      <p>Pick your mood and jump into a curated audio session</p>
+    </a>
+
+    <!-- Ask — AI chatbot -->
+    <a href="{{ url_for('chatbot') }}" class="action-card">
+      <div class="action-card-icon teal">🤖</div>
+      <h2>Ask</h2>
+      <p>Chat with Brain Bot and get a personalized session recommendation</p>
+    </a>
+  </div>
+</main>
+
+</body>
+</html>
