@@ -19,7 +19,7 @@ ENV/
 # Flask
 instance/
 .webassets-cache
-.env
+# .env # Removed by Orchids to allow .env files
 .flaskenv
 
 # Database
