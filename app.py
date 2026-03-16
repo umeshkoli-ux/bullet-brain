@@ -1,53 +1,12 @@
 """
 Bullet Brain - Brain Wellness Web Application
-Flask backend with SQLite user authentication and audio session management.
+Flask backend with audio session management (no login required).
 """
 
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
-import sqlite3
-import hashlib
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
-import re
-from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'bullet-brain-secret-key-2024')
-
-# ─── Database Configuration ────────────────────────────────────────────────────
-DB_PATH = os.path.join(os.path.dirname(__file__), 'bullet_brain.db')
-
-def get_db():
-    """Open a SQLite connection with row-factory for dict-like access."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    """Create tables on first run."""
-    with get_db() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                id            INTEGER PRIMARY KEY AUTOINCREMENT,
-                username      TEXT    NOT NULL UNIQUE,
-                email         TEXT    NOT NULL UNIQUE,
-                password_hash TEXT    NOT NULL,
-                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-    print("Database ready:", DB_PATH)
-
-def hash_password(password):
-    """Hash a password using SHA-256."""
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
-
-def login_required(f):
-    """Decorator to protect routes that require authentication."""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated
 
 # ─── Audio Session Data ─────────────────────────────────────────────────────────
 SESSIONS = {
@@ -77,131 +36,43 @@ SESSIONS = {
     ],
 }
 
-# ─── Auth Routes ────────────────────────────────────────────────────────────────
+# ─── Routes ──────────────────────────────────────────────────────────────────────
 
 @app.route('/')
 def index():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-    return redirect(url_for('login'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        email    = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-
-        if not email or not password:
-            flash('Please fill in all fields.', 'error')
-            return render_template('login.html')
-
-        with get_db() as conn:
-            user = conn.execute(
-                "SELECT * FROM users WHERE email = ? AND password_hash = ?",
-                (email, hash_password(password))
-            ).fetchone()
-
-        if user:
-            session['user_id']  = user['id']
-            session['username'] = user['username']
-            session['email']    = user['email']
-            return redirect(url_for('home'))
-        else:
-            flash('Invalid email or password.', 'error')
-
-    return render_template('login.html')
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if 'user_id' in session:
-        return redirect(url_for('home'))
-
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email    = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm  = request.form.get('confirm_password', '')
-
-        if not all([username, email, password, confirm]):
-            flash('Please fill in all fields.', 'error')
-            return render_template('register.html')
-
-        if password != confirm:
-            flash('Passwords do not match.', 'error')
-            return render_template('register.html')
-
-        if len(password) < 6:
-            flash('Password must be at least 6 characters.', 'error')
-            return render_template('register.html')
-
-        if not re.match(r'^[^@]+@[^@]+\.[^@]+$', email):
-            flash('Please enter a valid email address.', 'error')
-            return render_template('register.html')
-
-        try:
-            with get_db() as conn:
-                conn.execute(
-                    "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-                    (username, email, hash_password(password))
-                )
-        except sqlite3.IntegrityError:
-            flash('Username or email already exists.', 'error')
-            return render_template('register.html')
-
-        flash('Account created successfully! Please log in.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-# ─── Main App Routes ─────────────────────────────────────────────────────────────
+    return redirect(url_for('home'))
 
 @app.route('/home')
-@login_required
 def home():
-    return render_template('home.html', username=session.get('username'))
+    return render_template('home.html')
 
 @app.route('/enter')
-@login_required
 def enter():
-    return render_template('enter.html', username=session.get('username'))
+    return render_template('enter.html')
 
 @app.route('/focus')
-@login_required
 def focus():
-    return render_template('focus.html', sessions=SESSIONS['focus'], username=session.get('username'))
+    return render_template('focus.html', sessions=SESSIONS['focus'])
 
 @app.route('/relax')
-@login_required
 def relax():
-    return render_template('relax.html', sessions=SESSIONS['relax'], username=session.get('username'))
+    return render_template('relax.html', sessions=SESSIONS['relax'])
 
 @app.route('/sleep')
-@login_required
 def sleep():
-    return render_template('sleep.html', sessions=SESSIONS['sleep'], username=session.get('username'))
+    return render_template('sleep.html', sessions=SESSIONS['sleep'])
 
 @app.route('/meditation')
-@login_required
 def meditation():
-    return render_template('meditation.html', sessions=SESSIONS['meditation'], username=session.get('username'))
+    return render_template('meditation.html', sessions=SESSIONS['meditation'])
 
 @app.route('/chatbot')
-@login_required
 def chatbot():
-    return render_template('chatbot.html', username=session.get('username'))
+    return render_template('chatbot.html')
 
 # ─── Chatbot API ─────────────────────────────────────────────────────────────────
 
 @app.route('/api/chat', methods=['POST'])
-@login_required
 def api_chat():
     """Rule-based chatbot — detects mood keywords and recommends a session."""
     data    = request.get_json()
@@ -259,5 +130,4 @@ def api_chat():
 # ─── Run ─────────────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

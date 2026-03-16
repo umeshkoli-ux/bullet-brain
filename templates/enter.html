@@ -8,7 +8,6 @@
 </head>
 <body class="page-wrapper">
 
-<!-- Top Navigation -->
 <nav class="navbar">
   <div class="navbar-brand">
     <div class="brand-icon">🧠</div>
@@ -16,16 +15,6 @@
   </div>
   <div class="navbar-right">
     <a href="{{ url_for('home') }}" class="back-btn">← Back</a>
-    <div class="profile-btn" title="{{ username }}">
-      {{ username[0].upper() }}
-      <div class="profile-dropdown">
-        <div style="padding: 10px 12px; font-size:0.85rem; color: var(--text-secondary);">
-          Signed in as<br><strong style="color:var(--text-primary);">{{ username }}</strong>
-        </div>
-        <div class="divider"></div>
-        <a href="{{ url_for('logout') }}"><span>⎋</span> Sign Out</a>
-      </div>
-    </div>
   </div>
 </nav>
 
@@ -35,37 +24,27 @@
     <p>Select a mood to find the perfect audio session for your current state</p>
   </div>
 
-  <!-- Mood Cards Grid -->
   <div class="mood-grid">
-
-    <!-- Focus -->
     <a href="{{ url_for('focus') }}" class="mood-card focus">
       <span class="mood-card-icon">🎯</span>
       <h2>Focus</h2>
       <p>Sharpen concentration with binaural beats and alpha waves</p>
     </a>
-
-    <!-- Relax -->
     <a href="{{ url_for('relax') }}" class="mood-card relax">
       <span class="mood-card-icon">🌿</span>
       <h2>Relax</h2>
       <p>Ease tension and stress with soothing nature soundscapes</p>
     </a>
-
-    <!-- Sleep -->
     <a href="{{ url_for('sleep') }}" class="mood-card sleep">
       <span class="mood-card-icon">🌙</span>
       <h2>Sleep</h2>
       <p>Drift into restful sleep with delta waves and white noise</p>
     </a>
-
-    <!-- Meditation -->
     <a href="{{ url_for('meditation') }}" class="mood-card meditate">
       <span class="mood-card-icon">🪷</span>
       <h2>Meditation</h2>
       <p>Find inner peace with guided mindfulness and breathing sessions</p>
     </a>
-
   </div>
 </main>
 

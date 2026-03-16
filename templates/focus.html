@@ -8,7 +8,6 @@
 </head>
 <body class="page-wrapper">
 
-<!-- Top Navigation -->
 <nav class="navbar">
   <div class="navbar-brand">
     <div class="brand-icon">🧠</div>
@@ -16,16 +15,6 @@
   </div>
   <div class="navbar-right">
     <a href="{{ url_for('enter') }}" class="back-btn">← Back</a>
-    <div class="profile-btn" title="{{ username }}">
-      {{ username[0].upper() }}
-      <div class="profile-dropdown">
-        <div style="padding: 10px 12px; font-size:0.85rem; color: var(--text-secondary);">
-          Signed in as<br><strong style="color:var(--text-primary);">{{ username }}</strong>
-        </div>
-        <div class="divider"></div>
-        <a href="{{ url_for('logout') }}"><span>⎋</span> Sign Out</a>
-      </div>
-    </div>
   </div>
 </nav>
 
@@ -35,7 +24,6 @@
     <h1>Focus Sessions</h1>
     <p>Binaural beats and brain-wave audio to sharpen your concentration</p>
   </div>
-
   <div class="sessions-grid">
     {% for s in sessions %}
     <div class="session-card">
@@ -44,23 +32,15 @@
         <span class="session-duration">{{ s.duration }}</span>
       </div>
       <p class="session-description">{{ s.description }}</p>
-
       <div class="audio-wrapper">
-        {% set audio_path = 'audio/' + s.file %}
-        {% set full_path  = 'static/audio/' + s.file %}
-        <!-- Attempt to load audio from static/audio folder -->
         <audio controls preload="none">
-          <source src="{{ url_for('static', filename=audio_path) }}" type="audio/mpeg">
-          Your browser does not support the audio element.
+          <source src="{{ url_for('static', filename='audio/' + s.file) }}" type="audio/mpeg">
         </audio>
-        <p class="no-audio-msg">
-          Place <code>{{ s.file }}</code> in <code>static/audio/</code> to enable playback.
-        </p>
+        <p class="no-audio-msg">Place <code>{{ s.file }}</code> in <code>static/audio/</code> to enable playback.</p>
       </div>
     </div>
     {% endfor %}
   </div>
 </main>
-
 </body>
 </html>
